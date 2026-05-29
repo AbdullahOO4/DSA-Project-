@@ -1,0 +1,66 @@
+
+
+struct GraphNode {
+    string     personID, personName;
+    GraphNode* next = nullptr;
+};
+
+struct AdjListNode {
+    string       donorID, donorName;
+    GraphNode*   rList = nullptr;  // receiver chain
+    AdjListNode* next  = nullptr;
+};
+
+class DonorReceiverGraph {
+    AdjListNode* head = nullptr;
+
+    AdjListNode* findDonor(const string& id) {
+        for (auto* t = head; t; t = t->next)
+            if (t->donorID == id) return t;
+        return nullptr;
+    }
+
+public:
+    void addConnection(string dID, string dName,
+                        string rID, string rName) {
+        AdjListNode* row = findDonor(dID);
+        if (!row) {  
+            row = new AdjListNode;
+            row->donorID = dID; row->donorName = dName;
+            row->next = head;   head = row;
+        }
+        GraphNode* g = new GraphNode;
+        g->personID = rID; g->personName = rName;
+        g->next = row->rList;  row->rList = g;
+    }
+
+   
+    vector<string> BFS(const string& startID) {
+        string q[200]; int qf=0, qr=0;
+        string visited[200]; int vc=0;
+
+        auto isVisited = [&](const string& id) {
+            for (int i=0; i<vc; i++)
+                if (visited[i]==id) return true;
+            return false;
+        };
+
+        q[qr++] = startID;
+        vector<string> result;
+
+        while (qf < qr) {
+            string cur = q[qf++];
+            if (isVisited(cur)) continue;
+            visited[vc++] = cur;
+            result.push_back(cur);
+            AdjListNode* donor = findDonor(cur);
+            if (donor)
+                for (auto* r = donor->rList;
+                     r; r = r->next)
+                    if (!isVisited(r->personID))
+                        q[qr++] = r->personID;
+        }
+        return result;
+    }
+};
+DonorReceiverGraph donorGraph;
