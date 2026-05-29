@@ -1,0 +1,50 @@
+struct User {
+    string id, name, email;
+    string password, phone;
+    string role, address;
+};
+
+struct Donation {
+    string id, donorID, donorName;
+    string foodItem, qty, expiry;
+    string location, status, time;
+};
+
+struct Request {
+    string id, receiverID, receiverName;
+    string donationID, foodItem;
+    string status, time;
+};
+
+
+struct UserNode {
+    User     data;
+    UserNode* next = nullptr;
+};
+
+struct DonationNode {
+    Donation     data;
+    DonationNode* next = nullptr;
+};
+
+struct RequestNode {
+    Request     data;
+    RequestNode* next = nullptr;
+};
+
+void prependDonation(DonationNode*& head,
+                        Donation d) {
+    DonationNode* node = new DonationNode;
+    node->data = d;
+    node->next = head;
+    head        = node;  // O(1) prepend
+}
+
+// Traverse and print all food items in list
+void printList(DonationNode* head) {
+    while (head) {
+        cout << head->data.foodItem
+             << " [" << head->data.status << "]\n";
+        head = head->next;   // advance pointer
+    }
+}
