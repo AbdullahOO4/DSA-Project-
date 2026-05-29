@@ -1,0 +1,55 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <ctime>
+#include <iomanip>
+#include <vector>
+#include <map>
+#include <set>
+#include <mutex>
+#define WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <pthread.h>
+#pragma comment(lib, "ws2_32.lib")
+
+
+#define sleep(s)    Sleep((s)*1000)
+#define signal(s,h) // no-op: SIGPIPE absent on Windows
+
+using namespace std;
+
+mutex fileMutex;
+
+
+string getTimestamp() {
+    time_t now = time(0);
+    tm ltm;
+    localtime_s(&ltm, &now);   // Windows-safe (reversed args)
+    stringstream ss;
+    ss << 1900 + ltm.tm_year << "-"
+       << setw(2) << setfill('0') << 1 + ltm.tm_mon << "-"
+       << setw(2) << setfill('0') << ltm.tm_mday << " "
+       << setw(2) << setfill('0') << ltm.tm_hour << ":"
+       << setw(2) << setfill('0') << ltm.tm_min;
+    return ss.str();
+}
+
+
+string generateID(string prefix) {
+    return prefix + to_string(rand() % 9000 + 1000);
+}
+
+// Escapes special chars for safe JSON string embedding
+string jsonEsc(const string& s) {
+    string out;
+    for (char c : s) {
+        if      (c == '"')  out += "\"";
+        else if (c == '\') out += "\\";
+        else if (c == '
+') out += "\n";
+        else out += c;
+    }
+    return out;
+}
