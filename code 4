@@ -1,0 +1,79 @@
+
+struct TreeNode {
+    Donation  data;
+    TreeNode* left  = nullptr;
+    TreeNode* right = nullptr;
+};
+
+class DonationBST {
+    TreeNode* root = nullptr;
+
+    TreeNode* insert(TreeNode* n, Donation d) {
+        if (!n) {
+            TreeNode* nn = new TreeNode;
+            nn->data = d; return nn;
+        }
+        if (d.foodItem < n->data.foodItem)
+            n->left  = insert(n->left,  d);
+        else
+            n->right = insert(n->right, d);
+        return n;
+    }
+
+    void inorder(TreeNode* n,
+                  vector<Donation>& out) {
+        if (!n) return;
+        inorder(n->left, out);   // left subtree
+        out.push_back(n->data);  // visit root
+        inorder(n->right, out);  // right subtree
+    }
+
+public:
+    void insertDonation(Donation d) {
+        root = insert(root, d);
+    }
+    vector<Donation> getSorted() {
+        vector<Donation> v;
+        inorder(root, v); return v;
+    }
+};
+DonationBST donationTree;
+
+
+const int HASH_SIZE = 101;  // prime for fewer collisions
+
+struct HashNode {
+    User      data;
+    HashNode* next = nullptr;  // chaining
+};
+
+class UserHashTable {
+    HashNode* table[HASH_SIZE];
+
+    int hashFn(const string& email) {
+        int h = 0;
+        
+        for (char c : email)
+            h = (h * 31 + c) % HASH_SIZE;
+        return (h + HASH_SIZE) % HASH_SIZE;
+    }
+public:
+    UserHashTable() {
+        fill(table, table + HASH_SIZE, nullptr);
+    }
+    void insertUser(User u) {
+        int i = hashFn(u.email);
+        HashNode* n = new HashNode;
+        n->data = u;
+        n->next = table[i];   // prepend chain
+        table[i] = n;
+    }
+    User* searchUser(const string& email) {
+        int i = hashFn(email);
+        for (HashNode* t = table[i]; t; t = t->next)
+            if (t->data.email == email)
+                return &t->data;  // O(1) avg
+        return nullptr;
+    }
+};
+UserHashTable userHash;
