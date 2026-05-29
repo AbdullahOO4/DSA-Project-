@@ -1,0 +1,47 @@
+
+void bubbleSortByName(vector<Donation>& arr) {
+    int n = arr.size();
+    for (int i=0; i<n-1; i++)
+        for (int j=0; j<n-i-1; j++)
+            if (arr[j].foodItem > arr[j+1].foodItem)
+                swap(arr[j], arr[j+1]);
+    
+}
+
+void mergeSortHelper(
+        vector<Donation>& arr, int l, int r) {
+    if (l >= r) return;   // base case
+    int m = (l + r) / 2;
+    mergeSortHelper(arr, l, m);    // left half
+    mergeSortHelper(arr, m+1, r); // right half
+
+    vector<Donation> tmp;
+    int i = l, j = m+1;
+    while (i <= m && j <= r)
+        tmp.push_back(
+            arr[i].foodItem <= arr[j].foodItem
+            ? arr[i++] : arr[j++]);
+    while (i <= m) tmp.push_back(arr[i++]);
+    while (j <= r) tmp.push_back(arr[j++]);
+    for (int k=l; k<=r; k++)
+        arr[k] = tmp[k - l];  // copy merged back
+}
+
+void mergeSort(vector<Donation>& arr) {
+    if (!arr.empty())
+        mergeSortHelper(arr, 0, arr.size()-1);
+}
+
+int binarySearch(vector<Donation>& arr,
+                  const string& target) {
+    int lo=0, hi=arr.size()-1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if      (arr[mid].foodItem == target)
+            return mid;          // found
+        else if (arr[mid].foodItem < target)
+            lo = mid + 1;       // search right
+        else
+            hi = mid - 1;       // search left
+    }
+    return -1;  // not found
