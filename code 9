@@ -1,0 +1,72 @@
+
+
+#include "crow/crow_all.h"
+#include "nlohmann/json.hpp"
+#include "jwt-cpp/jwt.h"
+#include <openssl/sha.h>
+#include <boost/asio.hpp>
+
+using json = nlohmann::json;
+
+
+int main() {
+    crow::SimpleApp app;
+
+    
+    CROW_MIDDLEWARES(app, crow::CORSHandler);
+
+ 
+    CROW_ROUTE(app, "/login")
+    .methods("POST"_method)
+    ([](crow::request& req) {
+        json body = json::parse(req.body,
+                                   nullptr, false);
+        if (body.is_discarded())
+            return crow::response(400,
+                "Bad JSON");
+
+        string email = body["email"];
+        string pass  = body["password"];
+        User* u = userHash.searchUser(email);
+
+        if (u && bcrypt_checkpw(
+                    pass.c_str(), u->hash.c_str())) {
+           
+            auto token = jwt::create()
+                .set_subject(u->id)
+                .set_expires_at(
+                  chrono::system_clock::now()
+                  + chrono::hours(1))
+                .sign(jwt::algorithm::hs256{
+                         SECRET_KEY});
+            json resp = {{ "success", true },
+                         { "token", token },
+                         { "role", u->role }};
+            return crow::response(200,resp.dump());
+        }
+        return crow::response(401,
+            "{"error":"Invalid credentials"}");
+    });
+
+  
+    CROW_ROUTE(app, "/getDonations")
+    ([](crow::request& req) {
+        auto sorted = donationTree.getSorted();
+        mergeSort(sorted);
+        json arr = json::array();
+        for (auto& d : sorted)
+            arr.push_back({{"id",d.id},
+                {"item",d.foodItem},{"qty",d.qty},
+                {"status",d.status}});
+        return crow::response(200, arr.dump());
+    });
+
+    
+    CROW_ROUTE(app, "/static/<path>")
+    ([](crow::request&, string file) {
+        return crow::response(
+            crow::sendfile("static/" + file));
+    });
+
+    app.port(8080).multithreaded().run();
+}
