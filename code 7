@@ -1,0 +1,58 @@
+
+void initFiles() {
+    system("if not exist data mkdir data");
+    auto touch = [](const char* p){
+        ofstream(p, ios::app).close();
+    };
+    touch("data/users.txt");
+    touch("data/donations.txt");
+    touch("data/requests.txt");
+    touch("data/log.txt");
+}
+
+
+void updateRequestFile(const string& reqID,
+                         const string& newStatus) {
+    lock_guard<mutex> lock(fileMutex);
+    ifstream in("data/requests.txt");
+    ofstream out("data/requests_temp.txt");
+    string line;
+    while (getline(in, line)) {
+        if (line.empty()) continue;
+        stringstream ss(line);
+        string d[7];
+        for (int i=0; i<7; i++) getline(ss,d[i],'|');
+        if (d[0] == reqID) d[5] = newStatus;
+        out << d[0]<<"|"<<d[1]<<"|"<<d[2]<<"|"
+            <<d[3]<<"|"<<d[4]<<"|"<<d[5]<<"|"
+            <<d[6]<<"\n";
+    }
+    in.close(); out.close();
+    remove("data/requests.txt");
+    rename("data/requests_temp.txt",
+           "data/requests.txt");
+}
+
+
+string handleAddDonation(const string& body) {
+    string foodItem = getJSONField(body,"foodItem");
+    string qty      = getJSONField(body,"qty");
+    string location = getJSONField(body,"location");
+    if (foodItem.empty() || qty.empty() ||
+        location.empty())
+        return "{"success":false,"
+               ""message":"Required fields missing."}";
+
+    Donation d;
+    d.id = generateID("FOOD");
+    d.foodItem = foodItem; d.qty = qty;
+    d.location = location; d.status = "available";
+    d.time = getTimestamp();
+    { lock_guard<mutex> lock(fileMutex);
+      ofstream f("data/donations.txt", ios::app);
+      f << d.id<<"|"<<d.foodItem<<"|"<<d.status
+        <<"|"<<d.time<<"\n"; }
+    donationTree.insertDonation(d);
+    logs.push("Donation Added: " + foodItem);
+    return "{"success":true,"id":""+d.id+""}";
+}
