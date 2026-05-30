@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ReMeal — Feed Communities, Reduce Waste</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  <style>
+    .hero-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+    .rider-banner {
+      background: linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);
+      padding: 72px 0; margin-top: 0;
+    }
+    .rider-banner .container { display:flex; align-items:center; justify-content:space-between; gap:40px; flex-wrap:wrap; }
+    .rider-banner-text { flex:1; min-width:260px; }
+    .rider-banner-text .section-label { color:#a5b4fc; }
+    .rider-banner-text h2 { color:#fff; margin:12px 0 16px; font-size:2rem; }
+    .rider-banner-text p  { color:#c7d2fe; font-size:1.05rem; line-height:1.7; margin-bottom:28px; }
+    .rider-earn-cards { display:flex; gap:16px; flex-wrap:wrap; flex:1; min-width:260px; justify-content:flex-end; }
+    .earn-card {
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+      border-radius:16px; padding:24px 20px; text-align:center; min-width:130px;
+    }
+    .earn-icon  { font-size:28px; margin-bottom:8px; }
+    .earn-num   { font-size:1.5rem; font-weight:700; color:#fff; }
+    .earn-label { font-size:0.8rem; color:#a5b4fc; margin-top:4px; }
+    .charges-section { background:var(--surface-alt,#f8fafc); padding:64px 0; }
+    .charges-section h2 { text-align:center; margin-bottom:8px; }
+    .charges-sub { text-align:center; color:var(--hint); margin-bottom:40px; font-size:0.95rem; }
+    .charges-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px; }
+    .charge-card {
+      background:#fff; border:1px solid var(--border,#e5e7eb); border-radius:16px;
+      padding:28px 24px; text-align:center;
+      box-shadow:0 1px 4px rgba(0,0,0,0.05);
+    }
+    .charge-vehicle { font-size:2rem; margin-bottom:10px; }
+    .charge-type    { font-weight:600; font-size:1rem; margin-bottom:6px; }
+    .charge-price   { font-size:1.8rem; font-weight:700; color:#5b21b6; }
+    .charge-unit    { font-size:0.78rem; color:var(--hint); margin-top:2px; }
+    .charge-note    { font-size:0.8rem; color:var(--hint); margin-top:10px; border-top:1px solid var(--border,#e5e7eb); padding-top:10px; }
+    .btn-rider { background:#5b21b6; color:#fff; border:none; }
+    .btn-rider:hover { background:#4c1d95; }
+  </style>
+</head>
+<body class="page-wrap">
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <div class="nav-brand-mark">🌿</div>
+      ReMeal
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#portals">Portals</a>
+      <a href="#ride-earn">Ride & Earn</a>
+      <a href="/login" class="nav-cta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg-circle c1"></div>
+    <div class="hero-bg-circle c2"></div>
+    <div class="hero-inner">
+      <div class="hero-eyebrow fade-up">
+        <span class="hero-eyebrow-dot"></span>
+        Food Redistribution Network
+      </div>
+      <h1 class="fade-up delay-1">
+        Good food shouldn't<br><em>go to waste.</em>
+      </h1>
+      <p class="fade-up delay-2">
+        ReMeal connects surplus food from donors directly to families and communities in need.
+        Fast, transparent, and built for scale.
+      </p>
+      <div class="hero-actions fade-up delay-3">
+        <a href="/login?role=donor"    class="btn btn-primary btn-lg">Donate food</a>
+        <a href="/login?role=receiver" class="btn btn-outline btn-lg">Find food near me</a>
+        <a href="/login?role=rider"    class="btn btn-lg btn-rider">🛵 Ride &amp; Earn</a>
+      </div>
+      <div class="hero-proof fade-up delay-4" id="heroProof">
+        <div>
+          <div class="proof-num" id="proofDonations">—</div>
+          <div class="proof-label">Meals distributed</div>
+        </div>
+        <div class="proof-divider"></div>
+        <div>
+          <div class="proof-num" id="proofDonors">—</div>
+          <div class="proof-label">Active donors</div>
+        </div>
+        <div class="proof-divider"></div>
+        <div>
+          <div class="proof-num" id="proofFulfilled">—</div>
+          <div class="proof-label">Requests fulfilled</div>
+        </div>
+        <div class="proof-divider"></div>
+        <div>
+          <div class="proof-num" id="proofUsers">—</div>
+          <div class="proof-label">Registered users</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how" id="how">
+    <div class="container">
+      <div class="section-label">How it works</div>
+      <h2>Simple steps, real impact</h2>
+      <div class="how-grid">
+        <div class="how-step">
+          <div class="step-num">01</div>
+          <h3>List your surplus</h3>
+          <p>Donors post available food with item, quantity, precise address, and expiry date. Takes under two minutes.</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">02</div>
+          <h3>Browse and request</h3>
+          <p>Receivers browse available donations nearby and submit a pickup request. Donor approves directly.</p>
+        </div>
+        <div class="how-step">
+          <div class="step-num">03</div>
+          <h3>Rider delivers</h3>
+          <p>A rider claims the delivery, picks up from the donor's address, and drops it off at the receiver's door.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portal Selection -->
+  <section class="portals" id="portals">
+    <div class="container">
+      <div class="section-label text-center">Choose your role</div>
+      <h2 class="text-center">Three portals, one mission</h2>
+      <div class="portal-grid">
+        <a href="/login?role=donor" class="portal-card">
+          <div class="portal-icon pi-donor">🧑‍🍳</div>
+          <h3>Donor Portal</h3>
+          <p>List surplus food, manage donations, and approve pickup requests from receivers.</p>
+          <div class="portal-arrow">Get started →</div>
+        </a>
+        <a href="/login?role=receiver" class="portal-card">
+          <div class="portal-icon pi-receiver">🏘️</div>
+          <h3>Receiver Portal</h3>
+          <p>Browse available food donations in your area and submit pickup requests.</p>
+          <div class="portal-arrow">Find food near me →</div>
+        </a>
+        <a href="/login?role=rider" class="portal-card">
+          <div class="portal-icon pi-admin">🛵</div>
+          <h3>Rider Portal</h3>
+          <p>Claim approved deliveries, pick up food from donors, and deliver to receivers — and get paid per delivery.</p>
+          <div class="portal-arrow">Ride &amp; Earn →</div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ride & Earn Banner -->
+  <section class="rider-banner" id="ride-earn">
+    <div class="container">
+      <div class="rider-banner-text">
+        <div class="section-label">For Riders</div>
+        <h2>Ride &amp; Earn with every delivery</h2>
+        <p>
+          Join ReMeal as a rider and earn money with every food delivery you complete.
+          Choose your own hours, use any vehicle, and make a difference in your community
+          while earning a fair charge per delivery.
+        </p>
+        <a href="/login?role=rider" class="btn btn-lg" style="background:#fff;color:#4c1d95;font-weight:600;">
+          🛵 &nbsp;Join as a Rider
+        </a>
+      </div>
+      <div class="rider-earn-cards">
+        <div class="earn-card">
+          <div class="earn-icon">🚲</div>
+          <div class="earn-num">Rs 50</div>
+          <div class="earn-label">Per bicycle delivery</div>
+        </div>
+        <div class="earn-card">
+          <div class="earn-icon">🏍️</div>
+          <div class="earn-num">Rs 80</div>
+          <div class="earn-label">Per bike delivery</div>
+        </div>
+        <div class="earn-card">
+          <div class="earn-icon">🚗</div>
+          <div class="earn-num">Rs 120</div>
+          <div class="earn-label">Per car delivery</div>
+        </div>
+        <div class="earn-card">
+          <div class="earn-icon">🚐</div>
+          <div class="earn-num">Rs 180</div>
+          <div class="earn-label">Per van delivery</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Delivery Charges -->
+  <section class="charges-section">
+    <div class="container">
+      <div class="section-label text-center">Delivery charges</div>
+      <h2>Transparent pricing per delivery</h2>
+      <p class="charges-sub">Riders earn a fixed charge per completed delivery based on their vehicle type.</p>
+      <div class="charges-grid">
+        <div class="charge-card">
+          <div class="charge-vehicle">🚲</div>
+          <div class="charge-type">Bicycle</div>
+          <div class="charge-price">Rs 50</div>
+          <div class="charge-unit">per delivery</div>
+          <div class="charge-note">Best for short distances within same area</div>
+        </div>
+        <div class="charge-card">
+          <div class="charge-vehicle">🏍️</div>
+          <div class="charge-type">Motorcycle</div>
+          <div class="charge-price">Rs 80</div>
+          <div class="charge-unit">per delivery</div>
+          <div class="charge-note">Ideal for cross-area deliveries up to 10 km</div>
+        </div>
+        <div class="charge-card">
+          <div class="charge-vehicle">🚗</div>
+          <div class="charge-type">Car</div>
+          <div class="charge-price">Rs 120</div>
+          <div class="charge-unit">per delivery</div>
+          <div class="charge-note">Great for larger quantities or bulkier food items</div>
+        </div>
+        <div class="charge-card">
+          <div class="charge-vehicle">🚐</div>
+          <div class="charge-type">Van</div>
+          <div class="charge-price">Rs 180</div>
+          <div class="charge-unit">per delivery</div>
+          <div class="charge-note">For large batch donations across the city</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Impact Numbers -->
+  <section class="impact">
+    <div class="container">
+      <div class="section-label text-center">Our impact</div>
+      <h2 class="text-center">Food rescued this year</h2>
+      <div class="impact-grid">
+        <div class="impact-item">
+          <div class="impact-num" id="impactDon">—</div>
+          <div class="impact-label">Total donations listed</div>
+        </div>
+        <div class="impact-item">
+          <div class="impact-num" id="impactReq">—</div>
+          <div class="impact-label">Requests submitted</div>
+        </div>
+        <div class="impact-item">
+          <div class="impact-num" id="impactDone">—</div>
+          <div class="impact-label">Requests fulfilled</div>
+        </div>
+        <div class="impact-item">
+          <div class="impact-num" id="impactUsers">—</div>
+          <div class="impact-label">People using ReMeal</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">🌿 ReMeal</div>
+    <div class="footer-links">
+      <a href="#">About</a>
+      <a href="#">Privacy</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+  <div class="container">
+    <div class="footer-copy">© 2026 ReMeal. Connecting communities through food.</div>
+  </div>
+</footer>
+
+<script>
+  async function loadStats() {
+    try {
+      const res  = await fetch('/getStats');
+      const data = await res.json();
+      if (!data.success) return;
+      const s = data.stats;
+      document.getElementById('proofDonations').textContent = s.totalDonations;
+      document.getElementById('proofDonors').textContent    = s.donors;
+      document.getElementById('proofFulfilled').textContent = s.approved;
+      document.getElementById('proofUsers').textContent     = s.totalUsers;
+      document.getElementById('impactDon').textContent      = s.totalDonations;
+      document.getElementById('impactReq').textContent      = s.totalRequests;
+      document.getElementById('impactDone').textContent     = s.approved;
+      document.getElementById('impactUsers').textContent    = s.totalUsers;
+    } catch (e) {}
+  }
+  loadStats();
+</script>
+
+</body>
+</html>
