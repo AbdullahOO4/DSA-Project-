@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ReMeal — Donor Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<div class="dash-wrap">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-mark">🌿</div>
+      <span class="sidebar-title">ReMeal</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-name" id="sidebarName">Loading…</div>
+      <div class="sidebar-role"><span class="badge badge-donor">Donor</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <button class="nav-item active" onclick="nav('overview',this)"><span class="nav-icon">📊</span> Dashboard</button>
+      <div class="nav-section-label">Donations</div>
+      <button class="nav-item" onclick="nav('add',this)"><span class="nav-icon">＋</span> Add Donation</button>
+      <button class="nav-item" onclick="nav('mine',this)"><span class="nav-icon">📦</span> My Donations</button>
+      <div class="nav-section-label">Requests</div>
+      <button class="nav-item" onclick="nav('incoming',this)"><span class="nav-icon">📬</span> Incoming Requests <span class="badge badge-pending" id="incomingBadge" style="margin-left:4px;display:none;"></span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item" onclick="logout()"><span class="nav-icon">⬅</span> Logout</a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <span class="dash-topbar-title" id="topbarTitle">Dashboard</span>
+      <div class="dash-topbar-right">
+        <div class="avatar" id="avatarEl">?</div>
+      </div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- OVERVIEW -->
+      <section id="sec-overview">
+        <div class="dash-page-header">
+          <div class="dash-page-title">Welcome back, <span id="greetName">—</span></div>
+          <div class="dash-page-sub">Here's a summary of your donation activity.</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Donations</div>
+            <div class="stat-value" id="st-total">—</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Available</div>
+            <div class="stat-value" id="st-avail">—</div>
+            <div class="stat-sub">Awaiting pickup</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Fulfilled</div>
+            <div class="stat-value" id="st-done">—</div>
+            <div class="stat-sub">Successfully collected</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending Requests</div>
+            <div class="stat-value" id="st-reqs">—</div>
+            <div class="stat-sub">Awaiting your approval</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h4>Recent donations</h4>
+            <button class="btn btn-ghost btn-sm" onclick="nav('mine',null)">View all</button>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Food Item</th><th>Quantity</th><th>Location</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody id="recentBody"><tr><td colspan="5" class="td-muted" style="text-align:center;padding:20px">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ADD DONATION -->
+      <section id="sec-add" class="hidden">
+        <div class="dash-page-header">
+          <div class="dash-page-title">Add a donation</div>
+          <div class="dash-page-sub">List surplus food for receivers in your area.</div>
+        </div>
+        <div class="card" style="max-width:560px;">
+          <div class="card-body">
+            <div id="addAlert" class="alert hidden"></div>
+            <form id="addDonationForm" onsubmit="handleAddDonation(event)">
+              <div class="form-group">
+                <label class="form-label">Food item</label>
+                <input class="form-control" type="text" id="don-foodItem" placeholder="e.g. Biryani, Bread, Rice" required/>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Quantity</label>
+                  <input class="form-control" type="text" id="don-qty" placeholder="e.g. 10 plates, 5 kg" required/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Expiry date</label>
+                  <input class="form-control" type="date" id="don-expiry" required/>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Pickup street address</label>
+                <input class="form-control" type="text" id="don-street" placeholder="House/Flat no., Street name" required/>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Area</label>
+                  <input class="form-control" type="text" id="don-area" placeholder="e.g. Gulshan-e-Iqbal" required/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">City</label>
+                  <input class="form-control" type="text" id="don-city" placeholder="e.g. Karachi" required/>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <button type="submit" class="btn btn-primary btn-full" id="donBtn">List donation</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- MY DONATIONS -->
+      <section id="sec-mine" class="hidden">
+        <div class="dash-page-header flex-between">
+          <div>
+            <div class="dash-page-title">My donations</div>
+            <div class="dash-page-sub">All food you have listed on ReMeal.</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="nav('add',null)">+ Add new</button>
+        </div>
+        <div class="card">
+          <div class="card-header" style="padding-bottom:16px;">
+            <div class="flex gap-8" style="flex-wrap:wrap;">
+              <select class="form-control" style="width:auto;" id="filterSt" onchange="applyFilter()">
+                <option value="">All statuses</option>
+                <option value="available">Available</option>
+                <option value="completed">Completed</option>
+              </select>
+              <input class="form-control" style="width:210px;" type="text"
+                id="filterQ" placeholder="Search food…" oninput="applyFilter()"/>
+            </div>
+          </div>
+          <div class="card-body" style="padding-top:0;">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Food Item</th><th>Qty</th><th>Expiry</th><th>Pickup Address</th><th>Status</th><th>Listed on</th></tr></thead>
+                <tbody id="mineBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INCOMING REQUESTS -->
+      <section id="sec-incoming" class="hidden">
+        <div class="dash-page-header">
+          <div class="dash-page-title">Incoming requests</div>
+          <div class="dash-page-sub">Receivers who want to pick up your food — approve or reject each one.</div>
+        </div>
+        <div class="stats-row mb-24">
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="ir-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="ir-pending">—</div></div>
+          <div class="stat-card"><div class="stat-label">Approved</div><div class="stat-value" id="ir-approved">—</div></div>
+          <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value" id="ir-rejected">—</div></div>
+        </div>
+        <div id="incomingAlert" class="alert hidden" style="margin-bottom:16px;"></div>
+        <div class="card">
+          <div class="card-header" style="padding-bottom:12px;">
+            <select class="form-control" style="width:auto;" id="irFilter" onchange="renderIncoming()">
+              <option value="">All</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="card-body" style="padding-top:0;">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Request ID</th><th>Food Item</th><th>Donation ID</th><th>Receiver</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
+                <tbody id="incomingBody"><tr><td colspan="7" class="td-muted" style="text-align:center;padding:20px">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'donor') window.location.href = '/login?role=donor';
+
+  document.getElementById('sidebarName').textContent = user.name;
+  document.getElementById('greetName').textContent   = user.name.split(' ')[0];
+  document.getElementById('avatarEl').textContent    =
+    user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+  const SECTIONS = ['overview','add','mine','incoming'];
+  function nav(name, el) {
+    SECTIONS.forEach(s => document.getElementById('sec-'+s).classList.toggle('hidden', s !== name));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const titles = { overview:'Dashboard', add:'Add Donation', mine:'My Donations', incoming:'Incoming Requests' };
+    document.getElementById('topbarTitle').textContent = titles[name] || '';
+    if (name === 'mine' || name === 'overview') loadMyDonations();
+    if (name === 'incoming') loadIncomingRequests();
+  }
+
+  function logout() { sessionStorage.clear(); window.location.href = '/'; }
+
+  let myDonations = [];
+  let incomingReqs = [];
+
+  async function loadMyDonations() {
+    try {
+      const res  = await fetch(`/getMyDonations?donorID=${user.id}`);
+      const data = await res.json();
+      if (!data.success) return;
+      myDonations = data.donations;
+
+      document.getElementById('st-total').textContent = myDonations.length;
+      document.getElementById('st-avail').textContent = myDonations.filter(d => d.status==='available').length;
+      document.getElementById('st-done').textContent  = myDonations.filter(d => d.status==='completed').length;
+
+      const recent = [...myDonations].reverse().slice(0,3);
+      document.getElementById('recentBody').innerHTML = recent.length
+        ? recent.map(d => `
+            <tr>
+              <td>${d.foodItem}</td>
+              <td class="td-muted">${d.qty}</td>
+              <td class="td-muted">${d.location}</td>
+              <td><span class="badge badge-${d.status}">${d.status}</span></td>
+              <td class="td-muted">${(d.time||'').slice(0,10)}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="5" class="td-muted" style="text-align:center;padding:20px">No donations yet.</td></tr>';
+
+      applyFilter();
+    } catch(err) { console.error(err); }
+  }
+
+  function applyFilter() {
+    const st = document.getElementById('filterSt').value;
+    const q  = document.getElementById('filterQ').value.toLowerCase();
+    const rows = myDonations.filter(d =>
+      (!st || d.status===st) && d.foodItem.toLowerCase().includes(q)
+    );
+    document.getElementById('mineBody').innerHTML = rows.length
+      ? rows.map(d => `
+          <tr>
+            <td class="td-muted">${d.id}</td>
+            <td>${d.foodItem}</td>
+            <td class="td-muted">${d.qty}</td>
+            <td class="td-muted">${d.expiry||'—'}</td>
+            <td class="td-muted">${d.location}</td>
+            <td><span class="badge badge-${d.status}">${d.status}</span></td>
+            <td class="td-muted">${(d.time||'').slice(0,10)}</td>
+          </tr>`).join('')
+      : '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--hint)">No donations found.</td></tr>';
+  }
+
+  async function handleAddDonation(e) {
+    e.preventDefault();
+    const alertEl = document.getElementById('addAlert');
+    alertEl.classList.add('hidden');
+    document.getElementById('donBtn').disabled = true;
+    document.getElementById('donBtn').innerHTML = '<span class="spinner"></span> Submitting…';
+    try {
+      const street = document.getElementById('don-street').value.trim();
+      const area   = document.getElementById('don-area').value.trim();
+      const city   = document.getElementById('don-city').value.trim();
+      const res  = await fetch('/addDonation', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          donorID:   user.id, donorName: user.name,
+          foodItem:  document.getElementById('don-foodItem').value.trim(),
+          qty:       document.getElementById('don-qty').value.trim(),
+          expiry:    document.getElementById('don-expiry').value,
+          location:  `${street}, ${area}, ${city}`,
+          street, area, city
+        })
+      });
+      const data = await res.json();
+      alertEl.className   = `alert ${data.success ? 'alert-success' : 'alert-error'}`;
+      alertEl.textContent = data.message;
+      alertEl.classList.remove('hidden');
+      if (data.success) { document.getElementById('addDonationForm').reset(); loadMyDonations(); }
+    } catch {
+      alertEl.className = 'alert alert-error';
+      alertEl.textContent = 'Network error.';
+      alertEl.classList.remove('hidden');
+    } finally {
+      document.getElementById('donBtn').disabled = false;
+      document.getElementById('donBtn').textContent = 'List donation';
+    }
+  }
+
+  // ── Incoming requests for this donor's donations
+  async function loadIncomingRequests() {
+    try {
+      const res  = await fetch(`/getRequestsForDonor?donorID=${user.id}`);
+      const data = await res.json();
+      incomingReqs = data.success ? data.requests : [];
+
+      const pending  = incomingReqs.filter(r => r.status==='pending').length;
+      const approved = incomingReqs.filter(r => r.status==='approved').length;
+      const rejected = incomingReqs.filter(r => r.status==='rejected').length;
+
+      document.getElementById('ir-total').textContent    = incomingReqs.length;
+      document.getElementById('ir-pending').textContent  = pending;
+      document.getElementById('ir-approved').textContent = approved;
+      document.getElementById('ir-rejected').textContent = rejected;
+
+      // Update sidebar badge
+      const badge = document.getElementById('incomingBadge');
+      if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+      else badge.style.display = 'none';
+
+      document.getElementById('st-reqs').textContent = pending;
+
+      renderIncoming();
+    } catch(err) { console.error(err); }
+  }
+
+  function renderIncoming() {
+    const filter = document.getElementById('irFilter').value;
+    const list   = filter ? incomingReqs.filter(r => r.status===filter) : incomingReqs;
+    document.getElementById('incomingBody').innerHTML = list.length
+      ? [...list].reverse().map(r => `
+          <tr>
+            <td class="td-muted">${r.id}</td>
+            <td>${r.foodItem}</td>
+            <td class="td-muted">${r.donationID}</td>
+            <td>${r.receiverName}</td>
+            <td><span class="badge badge-${r.status}">${r.status}</span></td>
+            <td class="td-muted">${(r.time||'').slice(0,10)}</td>
+            <td>
+              ${r.status==='pending' ? `
+                <button class="btn btn-primary btn-sm" onclick="handleDecision('${r.id}','${r.donationID}','approved',this)">Approve</button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--danger);margin-left:4px;" onclick="handleDecision('${r.id}','${r.donationID}','rejected',this)">Reject</button>
+              ` : '—'}
+            </td>
+          </tr>`).join('')
+      : '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--hint)">No requests found.</td></tr>';
+  }
+
+  async function handleDecision(reqID, donationID, action, btn) {
+    const alertEl = document.getElementById('incomingAlert');
+    alertEl.classList.add('hidden');
+    // Disable both sibling buttons immediately
+    const row = btn.closest('tr');
+    if (row) row.querySelectorAll('button').forEach(b => b.disabled = true);
+    btn.textContent = action === 'approved' ? 'Approving…' : 'Rejecting…';
+    try {
+      const res  = await fetch('/updateRequest', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ requestID: reqID, donationID, action })
+      });
+      const data = await res.json();
+      alertEl.className   = `alert ${data.success ? 'alert-success' : 'alert-error'}`;
+      alertEl.textContent = data.message;
+      alertEl.classList.remove('hidden');
+      if (data.success) {
+        btn.textContent = action === 'approved' ? '✓ Approved' : '✗ Rejected';
+        btn.style.background = action === 'approved' ? '#16a34a' : '#dc2626';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        setTimeout(() => { loadIncomingRequests(); loadMyDonations(); }, 600);
+      } else {
+        if (row) row.querySelectorAll('button').forEach(b => b.disabled = false);
+        btn.textContent = action === 'approved' ? 'Approve' : 'Reject';
+      }
+    } catch {
+      alertEl.className = 'alert alert-error';
+      alertEl.textContent = 'Network error.';
+      alertEl.classList.remove('hidden');
+      if (row) row.querySelectorAll('button').forEach(b => b.disabled = false);
+      btn.textContent = action === 'approved' ? 'Approve' : 'Reject';
+    }
+  }
+
+  loadMyDonations();
+  loadIncomingRequests();
+</script>
+</body>
+</html>
