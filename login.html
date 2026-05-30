@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ReMeal — Sign In</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<div class="auth-wrap">
+
+  <div class="auth-left">
+    <div class="auth-card">
+
+      <div class="auth-logo">
+        <div class="auth-logo-mark">🌿</div>
+        <span class="auth-logo-text">ReMeal</span>
+      </div>
+
+      <!-- Role tabs -->
+      <div class="tab-group" id="roleTabs">
+        <button class="tab-btn active" onclick="setRole('donor',this)">Donor</button>
+        <button class="tab-btn"        onclick="setRole('receiver',this)">Receiver</button>
+        <button class="tab-btn"        onclick="setRole('rider',this)">Rider</button>
+      </div>
+
+      <!-- Mode tabs -->
+      <div id="modeTabs" style="display:flex;gap:0;margin-bottom:24px;border:1.5px solid var(--border-strong);border-radius:var(--r-md);overflow:hidden;">
+        <button class="tab-btn active" id="modeLogin"    onclick="setMode('login')">Sign in</button>
+        <button class="tab-btn"        id="modeRegister" onclick="setMode('register')">Create account</button>
+      </div>
+
+      <div id="alertBox" class="alert alert-error hidden"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-control" type="email" id="loginEmail" placeholder="you@example.com" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-control" type="password" id="loginPassword" placeholder="••••••••" required/>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full mt-8" id="loginBtn">Sign in</button>
+        <div class="auth-switch">No account? <a href="#" onclick="setMode('register');return false;">Create one</a></div>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full name</label>
+            <input class="form-control" type="text" id="regName" placeholder="Your full name" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input class="form-control" type="tel" id="regPhone" placeholder="03xx-xxxxxxx" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email address</label>
+          <input class="form-control" type="email" id="regEmail" placeholder="you@example.com" required/>
+        </div>
+
+        <!-- Rider-only: vehicle number -->
+        <div id="riderFields" class="hidden">
+          <div class="form-group">
+            <label class="form-label">Vehicle number</label>
+            <input class="form-control" type="text" id="regVehicleNo" placeholder="e.g. KHI-1234" />
+          </div>
+        </div>
+
+        <!-- Precise address fields (hidden for rider) -->
+        <div id="addressFields">
+          <div class="form-group">
+            <label class="form-label">Street address</label>
+            <input class="form-control" type="text" id="regStreet" placeholder="House/Flat no., Street name"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Area / Neighbourhood</label>
+              <input class="form-control" type="text" id="regArea" placeholder="e.g. Gulshan-e-Iqbal"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input class="form-control" type="text" id="regCity" placeholder="e.g. Karachi"/>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-control" type="password" id="regPassword" placeholder="••••••••" required/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm</label>
+            <input class="form-control" type="password" id="regConfirm" placeholder="••••••••" required/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full mt-8" id="registerBtn">Create account</button>
+        <div class="auth-switch">Already registered? <a href="#" onclick="setMode('login');return false;">Sign in</a></div>
+      </form>
+
+      <div class="divider"></div>
+      <div class="text-center">
+        <a href="/" style="font-size:0.88rem;color:var(--hint);">← Back to home</a>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div>
+      <div style="font-size:28px;margin-bottom:24px;">🌿</div>
+      <div class="auth-right-quote">"Every meal shared is a step toward a more equitable world."</div>
+      <div class="auth-right-sub" id="authRightSub">Join donors already making a difference on ReMeal.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentRole = new URLSearchParams(location.search).get('role') || 'donor';
+  let currentMode = 'login';
+
+  const roleSubs = {
+    donor:    'List your surplus food and help your community.',
+    receiver: 'Find food donations available near you.',
+    rider:    'Deliver food from donors to receivers and earn.'
+  };
+
+  function setRole(r, btn) {
+    currentRole = r;
+    document.querySelectorAll('#roleTabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('authRightSub').textContent = roleSubs[r] || '';
+    // Show/hide address fields (not needed for rider)
+    document.getElementById('addressFields').classList.toggle('hidden', r === 'rider');
+    // Show vehicle number only for rider
+    document.getElementById('riderFields').classList.toggle('hidden', r !== 'rider');
+    // Make address inputs required only for non-riders
+    ['regStreet','regArea','regCity'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.required = (r !== 'rider');
+    });
+    document.getElementById('modeTabs').style.display = 'flex';
+    showForm(currentMode);
+  }
+
+  function setMode(m) {
+    currentMode = m;
+    document.getElementById('modeLogin').classList.toggle('active',    m === 'login');
+    document.getElementById('modeRegister').classList.toggle('active', m === 'register');
+    showForm(m);
+  }
+
+  function showForm(f) {
+    document.getElementById('loginForm').classList.toggle('hidden',    f !== 'login');
+    document.getElementById('registerForm').classList.toggle('hidden', f !== 'register');
+    clearAlert();
+  }
+
+  function showAlert(msg, type='error') {
+    const b = document.getElementById('alertBox');
+    b.textContent = msg; b.className = `alert alert-${type}`; b.classList.remove('hidden');
+  }
+  function clearAlert() { document.getElementById('alertBox').classList.add('hidden'); }
+
+  function setLoading(id, on, label) {
+    const b = document.getElementById(id);
+    b.disabled = on;
+    b.innerHTML = on ? '<span class="spinner"></span> Please wait…' : label;
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault(); clearAlert();
+    setLoading('loginBtn', true, 'Sign in');
+    try {
+      const res  = await fetch('/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          email:    document.getElementById('loginEmail').value.trim(),
+          password: document.getElementById('loginPassword').value,
+          role:     currentRole
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        const dest = { donor:'/donor', receiver:'/receiver', rider:'/rider' };
+        window.location.href = dest[data.user.role] || '/';
+      } else { showAlert(data.message || 'Login failed.'); }
+    } catch { showAlert('Cannot reach the server. Is it running?'); }
+    finally  { setLoading('loginBtn', false, 'Sign in'); }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault(); clearAlert();
+    const pwd = document.getElementById('regPassword').value;
+    const cfm = document.getElementById('regConfirm').value;
+    if (pwd !== cfm) { showAlert('Passwords do not match.'); return; }
+
+    const street  = document.getElementById('regStreet').value.trim();
+    const area    = document.getElementById('regArea').value.trim();
+    const city    = document.getElementById('regCity').value.trim();
+    const address = `${street}, ${area}, ${city}`;
+
+    setLoading('registerBtn', true, 'Create account');
+    try {
+      const body = {
+        name:      document.getElementById('regName').value.trim(),
+        email:     document.getElementById('regEmail').value.trim(),
+        phone:     document.getElementById('regPhone').value.trim(),
+        street, area, city, address,
+        password: pwd, confirm: cfm,
+        role:     currentRole
+      };
+
+      if (currentRole === 'rider') {
+        body.vehicleNo = document.getElementById('regVehicleNo').value.trim();
+      }
+      const res  = await fetch('/register', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        showAlert('Account created! You can now sign in.', 'success');
+        document.getElementById('registerForm').reset();
+        setTimeout(() => setMode('login'), 1500);
+      } else { showAlert(data.message || 'Registration failed.'); }
+    } catch { showAlert('Cannot reach the server. Is it running?'); }
+    finally  { setLoading('registerBtn', false, 'Create account'); }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('#roleTabs .tab-btn');
+    const map  = { donor:0, receiver:1, rider:2 };
+    if (map[currentRole] !== undefined) setRole(currentRole, tabs[map[currentRole]]);
+  });
+</script>
+</body>
+</html>
