@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ReMeal — Rider Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<div class="dash-wrap">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-mark">🌿</div>
+      <span class="sidebar-title">ReMeal</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-name" id="sidebarName">Loading…</div>
+      <div class="sidebar-role"><span class="badge badge-rider">Rider</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <button class="nav-item active" onclick="nav('overview',this)"><span class="nav-icon">📊</span> Dashboard</button>
+      <div class="nav-section-label">Deliveries</div>
+      <button class="nav-item" onclick="nav('available',this)"><span class="nav-icon">📦</span> Available Deliveries</button>
+      <button class="nav-item" onclick="nav('mine',this)"><span class="nav-icon">🛵</span> My Deliveries</button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item" onclick="logout()"><span class="nav-icon">⬅</span> Logout</a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <span class="dash-topbar-title" id="topbarTitle">Dashboard</span>
+      <div class="dash-topbar-right">
+        <div class="avatar" id="avatarEl">?</div>
+      </div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- OVERVIEW -->
+      <section id="sec-overview">
+        <div class="dash-page-header">
+          <div class="dash-page-title">Welcome, <span id="greetName">—</span></div>
+          <div class="dash-page-sub">Your delivery activity at a glance.</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Deliveries</div>
+            <div class="stat-value" id="st-total">—</div>
+            <div class="stat-sub">All time</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value" id="st-pending">—</div>
+            <div class="stat-sub">Awaiting pickup</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">In Transit</div>
+            <div class="stat-value" id="st-transit">—</div>
+            <div class="stat-sub">On the way</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Delivered</div>
+            <div class="stat-value" id="st-done">—</div>
+            <div class="stat-sub">Completed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Earned</div>
+            <div class="stat-value" id="st-earned">Rs 0</div>
+            <div class="stat-sub">From completed deliveries</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h4>Recent deliveries</h4>
+            <button class="btn btn-ghost btn-sm" onclick="nav('mine',null)">View all</button>
+          </div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Food Item</th><th>Pickup</th><th>Drop-off</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody id="recentBody"><tr><td colspan="5" class="td-muted" style="text-align:center;padding:20px">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- AVAILABLE DELIVERIES -->
+      <section id="sec-available" class="hidden">
+        <div class="dash-page-header">
+          <div class="dash-page-title">Available deliveries</div>
+          <div class="dash-page-sub">Approved food requests that need a rider. Claim one to deliver.</div>
+        </div>
+        <div class="flex gap-8 mb-24" style="flex-wrap:wrap;">
+          <input class="form-control" style="width:240px;" type="text"
+            id="availQ" placeholder="Search food…" oninput="applyAvailFilter()"/>
+        </div>
+        <div id="availAlert" class="alert hidden" style="margin-bottom:16px;"></div>
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Delivery ID</th><th>Food Item</th><th>Qty</th>
+                    <th>Pickup Address</th><th>Drop-off Address</th>
+                    <th>Donor</th><th>Receiver</th><th>Charge</th><th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="availBody">
+                  <tr><td colspan="8" class="td-muted" style="text-align:center;padding:28px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MY DELIVERIES -->
+      <section id="sec-mine" class="hidden">
+        <div class="dash-page-header">
+          <div class="dash-page-title">My deliveries</div>
+          <div class="dash-page-sub">All deliveries you have claimed. Mark them as delivered when done.</div>
+        </div>
+        <div id="mineAlert" class="alert hidden" style="margin-bottom:16px;"></div>
+        <div class="card">
+          <div class="card-header" style="padding-bottom:12px;">
+            <select class="form-control" style="width:auto;" id="mineFilter" onchange="renderMine()">
+              <option value="">All</option>
+              <option value="rider_assigned">Assigned</option>
+              <option value="in_transit">In Transit</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+          <div class="card-body" style="padding-top:0;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Delivery ID</th><th>Food Item</th><th>Pickup</th><th>Drop-off</th>
+                    <th>Status</th><th>Claimed</th><th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="mineBody">
+                  <tr><td colspan="7" class="td-muted" style="text-align:center;padding:28px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'rider') window.location.href = '/login?role=rider';
+
+  document.getElementById('sidebarName').textContent = user.name;
+
+  // Charge per delivery based on vehicle registered
+  const chargeMap = { Bicycle: 50, Motorcycle: 80, Car: 120, Van: 180 };
+  const myCharge  = chargeMap[user.vehicle] || 80;
+  document.getElementById('greetName').textContent   = user.name.split(' ')[0];
+  document.getElementById('avatarEl').textContent    =
+    user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+  const SECTIONS = ['overview','available','mine'];
+  function nav(name, el) {
+    SECTIONS.forEach(s => document.getElementById('sec-'+s).classList.toggle('hidden', s !== name));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const titles = { overview:'Dashboard', available:'Available Deliveries', mine:'My Deliveries' };
+    document.getElementById('topbarTitle').textContent = titles[name] || '';
+    if (name === 'overview') loadMyDeliveries();
+    if (name === 'available') loadAvailableDeliveries();
+    if (name === 'mine') loadMyDeliveries();
+  }
+
+  function logout() { sessionStorage.clear(); window.location.href = '/'; }
+
+  let availDeliveries = [];
+  let myDeliveries    = [];
+
+  // ── Load approved requests needing a rider
+  async function loadAvailableDeliveries() {
+    try {
+      const res  = await fetch('/getAvailableDeliveries');
+      const data = await res.json();
+      availDeliveries = data.success ? data.deliveries : [];
+      applyAvailFilter();
+    } catch {
+      document.getElementById('availBody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--danger)">⚠️ Could not load deliveries.</td></tr>';
+    }
+  }
+
+  function applyAvailFilter() {
+    const q = document.getElementById('availQ').value.toLowerCase();
+    const list = availDeliveries.filter(d => d.foodItem.toLowerCase().includes(q));
+    document.getElementById('availBody').innerHTML = list.length
+      ? list.map(d => `
+          <tr>
+            <td class="td-muted">${d.id}</td>
+            <td><strong>${d.foodItem}</strong></td>
+            <td class="td-muted">${d.qty}</td>
+            <td class="td-muted">${d.pickupAddress}</td>
+            <td class="td-muted">${d.dropAddress}</td>
+            <td class="td-muted">${d.donorName}</td>
+            <td class="td-muted">${d.receiverName}</td>
+            <td><strong style="color:#5b21b6;">Rs ${myCharge}</strong></td>
+            <td>
+              <button class="btn btn-primary btn-sm" onclick="claimDelivery('${d.id}',this)">Claim</button>
+            </td>
+          </tr>`).join('')
+      : '<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--hint)">No available deliveries right now.</td></tr>';
+  }
+
+  async function claimDelivery(deliveryID, btn) {
+    const alertEl = document.getElementById('availAlert');
+    alertEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Claiming…';
+    try {
+      const res  = await fetch('/claimDelivery', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ deliveryID, riderID: user.id, riderName: user.name })
+      });
+      const data = await res.json();
+      alertEl.className   = `alert ${data.success ? 'alert-success' : 'alert-error'}`;
+      alertEl.textContent = data.message;
+      alertEl.classList.remove('hidden');
+      if (data.success) {
+        btn.textContent = '✓ Claimed';
+        btn.style.background = '#16a34a';
+        btn.style.cursor = 'default';
+        loadMyDeliveries();
+        // Reload available after short delay so UI feels smooth
+        setTimeout(loadAvailableDeliveries, 600);
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Claim';
+      }
+    } catch {
+      alertEl.className = 'alert alert-error';
+      alertEl.textContent = 'Network error.';
+      alertEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Claim';
+    }
+  }
+
+  // ── Load this rider's deliveries
+  async function loadMyDeliveries() {
+    try {
+      const res  = await fetch(`/getMyDeliveries?riderID=${user.id}`);
+      const data = await res.json();
+      myDeliveries = data.success ? data.deliveries : [];
+
+      document.getElementById('st-total').textContent   = myDeliveries.length;
+      document.getElementById('st-pending').textContent = myDeliveries.filter(d => d.riderStatus==='rider_assigned').length;
+      document.getElementById('st-transit').textContent = myDeliveries.filter(d => d.riderStatus==='in_transit').length;
+      const doneCount = myDeliveries.filter(d => d.riderStatus==='delivered').length;
+      document.getElementById('st-done').textContent    = doneCount;
+      document.getElementById('st-earned').textContent  = 'Rs ' + (doneCount * myCharge);
+
+      const recent = [...myDeliveries].reverse().slice(0,3);
+      document.getElementById('recentBody').innerHTML = recent.length
+        ? recent.map(d => `
+            <tr>
+              <td>${d.foodItem}</td>
+              <td class="td-muted">${d.pickupAddress}</td>
+              <td class="td-muted">${d.dropAddress}</td>
+              <td><span class="badge badge-${d.riderStatus==='delivered'?'available':d.riderStatus==='in_transit'?'pending':'pending'}">${d.riderStatus.replace('_',' ')}</span></td>
+              <td class="td-muted">${(d.claimedAt||'').slice(0,10)}</td>
+            </tr>`).join('')
+        : '<tr><td colspan="5" class="td-muted" style="text-align:center;padding:20px">No deliveries yet.</td></tr>';
+
+      renderMine();
+    } catch(err) { console.error(err); }
+  }
+
+  function renderMine() {
+    const filter = document.getElementById('mineFilter').value;
+    const list   = filter ? myDeliveries.filter(d => d.riderStatus===filter) : myDeliveries;
+    document.getElementById('mineBody').innerHTML = list.length
+      ? [...list].reverse().map(d => `
+          <tr>
+            <td class="td-muted">${d.id}</td>
+            <td><strong>${d.foodItem}</strong></td>
+            <td class="td-muted">${d.pickupAddress}</td>
+            <td class="td-muted">${d.dropAddress}</td>
+            <td><span class="badge badge-pending">${d.riderStatus.replace(/_/g,' ')}</span></td>
+            <td class="td-muted">${(d.claimedAt||'').slice(0,10)}</td>
+            <td>
+              ${d.riderStatus==='rider_assigned'
+                ? `<button class="btn btn-primary btn-sm" onclick="updateDelivery('${d.id}','in_transit',this)">Start Transit</button>`
+                : d.riderStatus==='in_transit'
+                  ? `<button class="btn btn-primary btn-sm" onclick="updateDelivery('${d.id}','delivered',this)">Mark Delivered</button>`
+                  : '✅ Done'}
+            </td>
+          </tr>`).join('')
+      : '<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--hint)">No deliveries found.</td></tr>';
+  }
+
+  async function updateDelivery(deliveryID, newStatus, btn) {
+    const alertEl = document.getElementById('mineAlert');
+    alertEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+    try {
+      const res  = await fetch('/updateDelivery', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ deliveryID, riderID: user.id, status: newStatus })
+      });
+      const data = await res.json();
+      alertEl.className   = `alert ${data.success ? 'alert-success' : 'alert-error'}`;
+      alertEl.textContent = data.message;
+      alertEl.classList.remove('hidden');
+      if (data.success) {
+        btn.textContent = newStatus === 'in_transit' ? '🚗 In Transit…' : '✓ Delivered';
+        btn.style.background = newStatus === 'delivered' ? '#16a34a' : '#d97706';
+        btn.style.cursor = 'default';
+        setTimeout(loadMyDeliveries, 500);
+      } else {
+        btn.disabled = false;
+        btn.textContent = newStatus === 'in_transit' ? 'Start Transit' : 'Mark Delivered';
+      }
+    } catch {
+      alertEl.className = 'alert alert-error';
+      alertEl.textContent = 'Network error.';
+      alertEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = newStatus === 'in_transit' ? 'Start Transit' : 'Mark Delivered';
+    }
+  }
+
+  loadMyDeliveries();
+  loadAvailableDeliveries();
+</script>
+</body>
+</html>
