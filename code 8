@@ -1,0 +1,70 @@
+
+struct ClientData { SOCKET sock; };
+
+void* handleClient(void* arg) {
+    ClientData* cd = (ClientData*)arg;
+    SOCKET sock = cd->sock;
+    delete cd; 
+
+    char buf[8192] = {};
+    int received = recv(sock, buf,
+                        sizeof(buf)-1, 0);
+    if (received <= 0) {
+        closesocket(sock); return nullptr;
+    }
+
+    string req(buf, received);
+    string method, path, query, body;
+
+   
+    istringstream ls(req.substr(0,req.find('\n')));
+    string fullPath, ver;
+    ls >> method >> fullPath >> ver;
+
+   
+    size_t qp = fullPath.find('?');
+    path  = (qp!=string::npos) ?
+            fullPath.substr(0,qp) : fullPath;
+    query = (qp!=string::npos) ?
+            fullPath.substr(qp+1) : "";
+
+    
+    size_t bs = req.find("\r\n\r\n");
+    if (bs != string::npos)
+        body = req.substr(bs + 4);
+
+    
+    if      (method == "GET")  { /* GET router */ }
+    else if (method == "POST") { /* POST router */ }
+    closesocket(sock);
+    return nullptr;
+}
+
+int main() {
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2,2), &wsaData);
+    srand((unsigned)time(0));
+    initFiles(); loadUsersFromFile();
+    loadDonationsFromFile(); loadRequestsFromFile();
+
+    SOCKET srv = socket(AF_INET,SOCK_STREAM,0);
+    int opt=1;
+    setsockopt(srv,SOL_SOCKET,SO_REUSEADDR,
+               (const char*)&opt,sizeof(opt));
+
+    sockaddr_in addr{};
+    addr.sin_family      = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port        = htons(8080);
+    bind(srv,(sockaddr*)&addr,sizeof(addr));
+    listen(srv, 10);
+
+    while (true) {
+        SOCKET client = accept(srv,nullptr,nullptr);
+        ClientData* cd = new ClientData{client};
+        pthread_t tid;
+        pthread_create(&tid,nullptr,handleClient,cd);
+        pthread_detach(tid); // auto-clean on exit
+    }
+    WSACleanup();
+}
