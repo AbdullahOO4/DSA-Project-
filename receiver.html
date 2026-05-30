@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ReMeal — Receiver Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<div class="dash-wrap">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-mark">🌿</div>
+      <span class="sidebar-title">ReMeal</span>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-name" id="sidebarName">Loading…</div>
+      <div class="sidebar-role"><span class="badge badge-receiver">Receiver</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Food</div>
+      <button class="nav-item active" onclick="nav('browse',this)"><span class="nav-icon">🍽️</span> Browse Food</button>
+      <div class="nav-section-label">My Activity</div>
+      <button class="nav-item" onclick="nav('myreqs',this)"><span class="nav-icon">📋</span> My Requests</button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="#" class="nav-item" onclick="logout()"><span class="nav-icon">⬅</span> Logout</a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <span class="dash-topbar-title" id="topbarTitle">Browse Food</span>
+      <div class="dash-topbar-right">
+        <div class="avatar" id="avatarEl">?</div>
+      </div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- BROWSE -->
+      <section id="sec-browse">
+        <div class="dash-page-header">
+          <div class="dash-page-title">Available food</div>
+          <div class="dash-page-sub">Donations ready for pickup near you. Click Request on any item.</div>
+        </div>
+        <div class="flex gap-8 mb-24" style="flex-wrap:wrap;">
+          <input class="form-control" style="width:240px;" type="text"
+            id="browseQ" placeholder="Search food name…" oninput="applyBrowseFilter()"/>
+          <select class="form-control" style="width:auto;" id="browseLoc" onchange="applyBrowseFilter()">
+            <option value="">All locations</option>
+          </select>
+        </div>
+        <div id="reqAlert2" class="alert hidden" style="margin-bottom:16px;"></div>
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>Food Item</th><th>Quantity</th><th>Expiry</th><th>Pickup Address</th><th>Donor</th><th>Action</th></tr>
+                </thead>
+                <tbody id="foodTable">
+                  <tr><td colspan="6" class="td-muted" style="text-align:center;padding:28px;">Loading…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MY REQUESTS -->
+      <section id="sec-myreqs" class="hidden">
+        <div class="dash-page-header">
+          <div class="dash-page-title">My requests</div>
+          <div class="dash-page-sub">Track status of your food requests. You can cancel pending ones.</div>
+        </div>
+        <div class="stats-row mb-24">
+          <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="rq-total">—</div></div>
+          <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="rq-pending">—</div></div>
+          <div class="stat-card"><div class="stat-label">Approved</div><div class="stat-value" id="rq-approved">—</div></div>
+          <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value" id="rq-rejected">—</div></div>
+        </div>
+        <div id="myReqAlert" class="alert hidden" style="margin-bottom:16px;"></div>
+        <div class="card">
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Request ID</th><th>Food Item</th><th>Donation ID</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead>
+                <tbody id="reqBody"><tr><td colspan="6" class="td-muted" style="text-align:center;padding:20px">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+  if (!user || user.role !== 'receiver') window.location.href = '/login?role=receiver';
+
+  document.getElementById('sidebarName').textContent = user.name;
+  document.getElementById('avatarEl').textContent =
+    user.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+  const SECTIONS = ['browse','myreqs'];
+  function nav(name, el) {
+    SECTIONS.forEach(s => document.getElementById('sec-'+s).classList.toggle('hidden', s !== name));
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+    document.getElementById('topbarTitle').textContent = name==='browse' ? 'Browse Food' : 'My Requests';
+    if (name === 'myreqs') loadMyRequests();
+  }
+
+  function logout() { sessionStorage.clear(); window.location.href = '/'; }
+
+  let allDonations = [];
+  const requestedIDs = new Set(); // track locally requested donations
+
+  async function loadAvailableDonations() {
+    try {
+      const res  = await fetch('/getDonations?status=available');
+      const data = await res.json();
+      allDonations = data.success ? data.donations : [];
+
+      const locations = [...new Set(allDonations.map(d => d.location).filter(Boolean))];
+      const locSel = document.getElementById('browseLoc');
+      locSel.innerHTML = '<option value="">All locations</option>' +
+        locations.map(l => `<option>${l}</option>`).join('');
+
+      applyBrowseFilter();
+    } catch {
+      document.getElementById('foodTable').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--danger)">⚠️ Could not load donations. Is the server running?</td></tr>';
+    }
+  }
+
+  function applyBrowseFilter() {
+    const q   = document.getElementById('browseQ').value.toLowerCase();
+    const loc = document.getElementById('browseLoc').value;
+    const list = allDonations.filter(d =>
+      (!loc || d.location===loc) && d.foodItem.toLowerCase().includes(q)
+    );
+    if (!list.length) {
+      document.getElementById('foodTable').innerHTML =
+        '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--hint)">No donations match your filters.</td></tr>';
+      return;
+    }
+    document.getElementById('foodTable').innerHTML = list.map(d => `
+      <tr>
+        <td><strong>${d.foodItem}</strong></td>
+        <td class="td-muted">${d.qty}</td>
+        <td class="td-muted">${d.expiry || '—'}</td>
+        <td class="td-muted">${d.location}</td>
+        <td class="td-muted">${d.donorName || 'Anonymous'}</td>
+        <td>
+          ${requestedIDs.has(d.id)
+            ? '<button class="btn btn-sm" disabled style="background:#16a34a;color:#fff;cursor:default;">✓ Requested</button>'
+            : `<button class="btn btn-primary btn-sm" onclick="submitRequest('${d.id}','${d.foodItem.replace(/'/g,"\\'")}',this)">Request</button>`}
+        </td>
+      </tr>`).join('');
+  }
+
+  async function submitRequest(donID, foodItem, btn) {
+    const alertEl = document.getElementById('reqAlert2');
+    alertEl.classList.add('hidden');
+    // Immediately update button
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    try {
+      const res  = await fetch('/makeRequest', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          receiverID:   user.id,
+          receiverName: user.name,
+          donationID:   donID,
+          foodItem
+        })
+      });
+      const data = await res.json();
+      alertEl.className   = `alert ${data.success ? 'alert-success' : 'alert-error'}`;
+      alertEl.textContent = data.message;
+      alertEl.classList.remove('hidden');
+      if (data.success) {
+        // Mark as requested locally — don't reload the whole list
+        requestedIDs.add(donID);
+        btn.textContent  = '✓ Requested';
+        btn.disabled     = true;
+        btn.style.background = 'var(--green-600, #16a34a)';
+        btn.style.cursor = 'default';
+      } else {
+        // Re-enable on failure
+        btn.disabled = false;
+        btn.textContent = 'Request';
+      }
+    } catch {
+      alertEl.className = 'alert alert-error';
+      alertEl.textContent = 'Network error.';
+      alertEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Request';
+    }
+  }
+
+  async function loadMyRequests() {
+    try {
+      const res  = await fetch(`/getMyRequests?receiverID=${user.id}`);
+      const data = await res.json();
+      const reqs = data.success ? data.requests : [];
+
+      document.getElementById('rq-total').textContent    = reqs.length;
+      document.getElementById('rq-pending').textContent  = reqs.filter(r => r.status==='pending').length;
+      document.getElementById('rq-approved').textContent = reqs.filter(r => r.status==='approved').length;
+      document.getElementById('rq-rejected').textContent = reqs.filter(r => r.status==='rejected').length;
+
+      document.getElementById('reqBody').innerHTML = reqs.length
+        ? [...reqs].reverse().map(r => `
+            <tr>
+              <td class="td-muted">${r.id}</td>
+              <td>${r.foodItem}</td>
+              <td class="td-muted">${r.donationID}</td>
+              <td><span class="badge badge-${r.status}">${r.status}</span></td>
+              <td class="td-muted">${(r.time||'').slice(0,10)}</td>
+              <td>
+                ${r.status==='pending'
+                  ? `<button class="btn btn-ghost btn-sm" style="color:var(--danger);"
+                       onclick="cancelRequest('${r.id}',this)">Cancel</button>`
+                  : '—'}
+              </td>
+            </tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--hint)">No requests yet.</td></tr>';
+    } catch {
+      document.getElementById('reqBody').innerHTML =
+        '<tr><td colspan="6" class="td-muted" style="text-align:center;padding:20px">Could not load requests.</td></tr>';
+    }
+  }
+
+  async function cancelRequest(reqID, btn) {
+    if (!confirm('Cancel this request?')) return;
+    const alertEl = document.getElementById('myReqAlert');
+    alertEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Cancelling…';
+    try {
+      const res  = await fetch('/deleteRequest', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ requestID: reqID, receiverID: user.id })
+      });
+      const data = await res.json();
+      alertEl.className   = `alert ${data.success ? 'alert-success' : 'alert-error'}`;
+      alertEl.textContent = data.message;
+      alertEl.classList.remove('hidden');
+      if (data.success) {
+        btn.textContent = '✓ Cancelled';
+        btn.style.color = '#6b7280';
+        setTimeout(loadMyRequests, 500);
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Cancel';
+      }
+    } catch {
+      alertEl.className = 'alert alert-error';
+      alertEl.textContent = 'Network error.';
+      alertEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Cancel';
+    }
+  }
+
+  loadAvailableDonations();
+</script>
+</body>
+</html>
